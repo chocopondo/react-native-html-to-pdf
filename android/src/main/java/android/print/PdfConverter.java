@@ -13,7 +13,6 @@ import android.util.Log;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import android.webkit.WebSettings;
 import java.io.File;
 import android.util.Base64;
 import java.io.IOException;
@@ -21,8 +20,6 @@ import java.io.RandomAccessFile;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.WritableMap;
-
-import com.tom_roush.pdfbox.pdmodel.PDDocument;
 
 /**
  * Converts HTML to PDF.
@@ -76,12 +73,7 @@ public class PdfConverter implements Runnable {
                                 if (mShouldEncode) {
                                     base64 = encodeFromFile(mPdfFile);
                                 }
-
-                                PDDocument myDocument = PDDocument.load(mPdfFile);
-                                int pagesToBePrinted = myDocument.getNumberOfPages();
-
                                 mResultMap.putString("filePath", mPdfFile.getAbsolutePath());
-                                mResultMap.putString("numberOfPages", String.valueOf(pagesToBePrinted));
                                 mResultMap.putString("base64", base64);
                                 mPromise.resolve(mResultMap);
                             } catch (IOException e) {
@@ -94,9 +86,7 @@ public class PdfConverter implements Runnable {
                 }
             }
         });
-        WebSettings settings = mWebView.getSettings();
-        settings.setDefaultTextEncodingName("utf-8");
-        mWebView.loadData(mHtmlString, "text/HTML; charset=utf-8", null);
+        mWebView.loadDataWithBaseURL(mBaseURL, mHtmlString, "text/HTML", "UTF-8", null);
     }
 
     public PrintAttributes getPdfPrintAttrs() {
@@ -108,13 +98,13 @@ public class PdfConverter implements Runnable {
     }
 
     public void convert(Context context, String htmlString, File file, boolean shouldEncode, WritableMap resultMap,
-            Promise promise, String baseURL) throws Exception {
+            Promise promise, String baseURL) {
         if (context == null)
-            throw new Exception("context can't be null");
+            throw new IllegalArgumentException("context can't be null");
         if (htmlString == null)
-            throw new Exception("htmlString can't be null");
+            throw new IllegalArgumentException("htmlString can't be null");
         if (file == null)
-            throw new Exception("file can't be null");
+            throw new IllegalArgumentException("file can't be null");
 
         if (mIsCurrentlyConverting)
             return;
@@ -144,7 +134,7 @@ public class PdfConverter implements Runnable {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return null;
 
         return new PrintAttributes.Builder()
-                .setMediaSize(PrintAttributes.MediaSize.NA_LETTER)
+                .setMediaSize(PrintAttributes.MediaSize.NA_GOVT_LETTER)
                 .setResolution(new PrintAttributes.Resolution("RESOLUTION_ID", "RESOLUTION_ID", 600, 600))
                 .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
                 .build();
